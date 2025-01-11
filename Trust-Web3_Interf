@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+interface IPriceFeed {
+    function getPrice() external view returns (uint256);
+}
+
+contract TrustWalletMetadata {
+    address public owner;
+    address public tokenAddress;
+    address public priceFeedContract;
+
+    string public tokenName = "Tether USD";
+    string public tokenSymbol = "USDT";
+    uint8 public decimals = 6;
+
+    event MetadataUpdated(string tokenName, string tokenSymbol, uint8 decimals, address priceFeedContract);
+
+    constructor(address _tokenAddress, address _priceFeedContract) {
+        owner = msg.sender;
+        tokenAddress = _tokenAddress;
+        priceFeedContract = _priceFeedContract;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not the contract owner");
+        _;
+    }
+
+    function updateMetadata(
+        string memory _tokenName,
+        string memory _tokenSymbol,
+        uint8 _decimals,
+        address _priceFeedContract
+    ) public onlyOwner {
+        tokenName = _tokenName;
+        tokenSymbol = _tokenSymbol;
+        decimals = _decimals;
+        priceFeedContract = _priceFeedContract;
+
+        emit MetadataUpdated(_tokenName, _tokenSymbol, _decimals, _priceFeedContract);
+    }
+
+    function getTokenPrice() public view returns (uint256) {
+        require(priceFeedContract != address(0), "Price feed contract not set");
+        return IPriceFeed(priceFeedContract).getPrice();
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0), "Invalid address");
+        owner = newOwner;
+    }
+}
